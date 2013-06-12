@@ -46,7 +46,8 @@ void MVLR::init(vector<vector<double> > & Y_in, vector<vector<double> > & Xg_in,
   }
 
   // default value for IW prior on Sigma H = diag(1e-4), m = s-1
-  m = s-1;
+  //m = s-1;
+  m = 0;
   H = gsl_matrix_calloc(s,s);
   for(int i=0;i<s;i++){
     gsl_matrix_set(H,i,i,1e-4);
@@ -165,7 +166,7 @@ void MVLR::compute_Sigma_null(){
   Sigma0 = gsl_matrix_calloc(s,s);
   gsl_blas_dgemm(CblasTrans,CblasNoTrans,1,Y,t1,0,Sigma0);
   
-  gsl_matrix_scale(Sigma0,1.0/(n+m-q-s-1));
+  gsl_matrix_scale(Sigma0,1.0/(n));
 
   if(no_corr){
     for(int i=0;i<s;i++){
@@ -230,7 +231,8 @@ void MVLR::compute_Sigma_mle(vector<vector<int> >& config){
        
     double factor = 1;
     gsl_matrix *resv = compute_residual(yv,Xv,msize,factor);
-    fac_vec.push_back(sqrt(factor));
+    //fac_vec.push_back(sqrt(factor));
+    fac_vec.push_back(1);
     
 
     gsl_matrix_get_col(cpv,resv,0);
@@ -364,8 +366,8 @@ gsl_matrix *MVLR::compute_residual(gsl_matrix *y, gsl_matrix *X, int size, doubl
   gsl_matrix_sub(res,fy);
   
     
-  
-  //comput correction factor
+  /*
+  //comput correction factor: small sample correction
   
   if(size>q){
     
@@ -423,7 +425,8 @@ gsl_matrix *MVLR::compute_residual(gsl_matrix *y, gsl_matrix *X, int size, doubl
     gsl_matrix_free(t10);
 
   }
-  
+  */
+
   gsl_matrix_free(t1);
   gsl_matrix_free(t2);
   gsl_matrix_free(t3);
