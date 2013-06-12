@@ -43,7 +43,7 @@ Upon successful compilation, a binary executable "sbams_mvlr" should be produced
 Documentation and Example Data
 =============================================
 
-A detailed documentation "sbams_mvlr.pdf" can be found in doc/ directory, we also include a simulated sample data set in the sample_data/ directory.  
+A detailed documentation "sbams_mvlr.pdf" can be found in doc/ directory, we also include a simulated sample data set in the data/ directory.  
 
 
 Citation
