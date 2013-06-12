@@ -51,4 +51,4 @@ Citation
 
 Please cite the following for the usage of this software package:
 
-Wen, X "Bayesian Model Selection in Complex Linear Systems, as Illustrated in Genetic Association Studies", submit to Biometrics.
+Wen, X. "Bayesian Model Selection in Complex Linear Systems, as Illustrated in Genetic Association Studies", submit to Biometrics.
