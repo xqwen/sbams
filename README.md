@@ -34,7 +34,7 @@ The compilation from the c++ source code requires the GNU c++ compiler (g++), GN
 
 To compile the executable, run the following commands from the current directory:
 
-     cd src
+     cd src/mcmc/
      make
 
 Upon successful compilation, a binary executable "sbams_mvlr" should be produced.   
