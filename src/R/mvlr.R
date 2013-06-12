@@ -65,12 +65,12 @@ make_Wg<-function(phi, omega, p, r){
 
 #####################################################
 
-attach(read.table("sample_gene.R.dat",head=T)
-Y = cbind(tissue1,tissue2)
+attach(read.table("sim.R.dat",head=T))
+Y = cbind(t1,t2,t3)
 n = dim(Y)[1]
 
 Xc = matrix(nrow=n,rep(1,n))
-Xg = matrix(nrow=n,cbind(rs172543, rs77664045, rs302373))
+Xg = matrix(nrow=n,cbind(rs1, rs2, rs3))
 Wg = make_Wg(phi=0.5,omega=0.5 ,p=dim(Xg)[2],r=dim(Y)[2])
 compute_log10_ABF(Y,Xg,Xc, Wg)
 
