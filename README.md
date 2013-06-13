@@ -46,6 +46,13 @@ Documentation and Example Data
 A detailed documentation "sbams_mvlr.pdf" can be found in doc/ directory, we also include a simulated sample data set in the data/ directory.  
 
 
+
+Simulation Scripts and Data
+=============================================
+
+We also include the scripts and data used for generating simulated data set in the paper. These files can be found in simulation/ directory. 
+
+
 Citation
 =============================================
 
