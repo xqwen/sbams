@@ -42,11 +42,11 @@ void parser::process_line(string line){
   }
   
 
-  if(strcmp(header,"pheno") == 0){
+  if(strcmp(header,"pheno") == 0||strcmp(header,"response")==0){
     pheno_vec.push_back(vecv);  
     pheno_map[pheno_vec.size()-1] = string(name);
   }
-  if(strcmp(header,"geno") == 0){
+  if(strcmp(header,"geno") == 0 || strcmp(header,"covariate")==0){
     geno_vec.push_back(vecv);
     geno_map[geno_vec.size()-1] = string(name);
   }

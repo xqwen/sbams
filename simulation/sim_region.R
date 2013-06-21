@@ -59,9 +59,9 @@ my = apply(Y.tr, 2, mean)
 X.tr=scale(X.tr, center=mx, scale=FALSE)
 Y.tr=scale(Y.tr, center=my, scale=FALSE)
 
-rsv = paste("geno rs",seq(1,p),sep="")
+rsv = paste("covariate rs",seq(1,p),sep="")
 dX = rbind(rsv,X.tr)
-dY = rbind(c("pheno F","pheno L","pheno T"),Y.tr)
+dY = rbind(c("response F","response L","response T"),Y.tr)
 write.table(file="sim.dat",t(dY), quote = FALSE, append=FALSE, sep=" ",row.names=FALSE, col.names=FALSE)
 write.table(file="sim.dat",t(dX), quote = FALSE, append=TRUE, sep=" ",row.names=FALSE, col.names=FALSE)
 
