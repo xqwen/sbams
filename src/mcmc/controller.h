@@ -4,6 +4,7 @@
 #include "MVLR.h"
 #include <set>
 #include <map>
+#include <stdio.h>
 
 
 class SNP {
@@ -58,7 +59,8 @@ class controller {
 
   int option; // marginal scan or MCMC
 
-
+  FILE *outfd;
+  
   parser pars;
   string gene;
 
@@ -136,8 +138,9 @@ class controller {
   
   void init_mcmc();
   
-  
-  
+
+  void set_outfile(char *filename);
+   
   void set_mvlr_option(double sigma_option, int no_corr){
     mvlr_sigma_option= sigma_option;
     mvlr_no_corr = no_corr; 

@@ -7,6 +7,7 @@ int main(int argc, char **argv){
   
   char grid_file[128];
   char data_file[128];
+  char out_file[128];
   char gene_name[64];
 
   char prior_file[128];
@@ -14,7 +15,9 @@ int main(int argc, char **argv){
   
   memset(gene_name,0,64);
   memset(grid_file,0,128);
-  memset(data_file,0,128); 
+  memset(data_file,0,128);
+  memset(out_file,0,128);
+  
   memset(prior_file,0,128);
   
   int prep = 0;
@@ -48,37 +51,20 @@ int main(int argc, char **argv){
       strcpy(data_file,argv[++i]);
       continue;
     }
-    
-    if(strcmp(argv[i], "-n")==0 ){
-      strcpy(gene_name, argv[++i]);
+
+    // prior file
+    if(strcmp(argv[i], "-prior")==0 || strcmp(argv[i], "-p")==0 ){
+      strcpy(prior_file,argv[++i]);
       continue;
     }
     
-    // run options
-    
-    if(strcmp(argv[i], "-mcmc")==0 ){ // mcmc
-      run_option = 1;
+    // output file
+    if(strcmp(argv[i], "-o")==0){
+      strcpy(out_file, argv[++i]);
       continue;
     }
 
-    if(strcmp(argv[i], "-scan")==0 ){ // single snp analysis
-      run_option = 2;
-      continue;
-    }
 
-    
-    if(strcmp(argv[i], "-ga")==0 ){ // gene-level analysis
-      run_option = 3;
-      continue;
-    }
-
-    
-    if(strcmp(argv[i], "-prep_hm")==0){ // prepare for hierarchical model
-      run_option = 4;
-      continue;
-    }
-    
-    
     // mcmc details
 
     if(strcmp(argv[i], "-b")==0 || strcmp(argv[i], "-burnin")==0 ){
@@ -99,24 +85,60 @@ int main(int argc, char **argv){
       pes = atof(argv[++i]);
       continue;
     }
-      
-    if(strcmp(argv[i], "-lambda")==0 ){
-      lambda = atof(argv[++i]);
-      continue;
-    }
     
-    if(strcmp(argv[i], "-prior")==0){
-      strcpy(prior_file,argv[++i]);
-      continue;
-    }
+    
 
 
     // abf option
-
     if(strcmp(argv[i],"-abf")==0){
       abf_option = atof(argv[++i]);
       continue;
     }
+
+
+    
+
+    
+    
+    
+    // these are hidden options, not documented.
+
+    // run options
+    
+    if(strcmp(argv[i], "-mcmc")==0 ){ // mcmc
+      run_option = 1;
+      continue;
+    }
+
+
+
+    if(strcmp(argv[i], "-scan")==0 ){ // single snp analysis
+      run_option = 2;
+      continue;
+    }
+
+    
+    if(strcmp(argv[i], "-ga")==0 ){ // gene-level analysis
+      run_option = 3;
+      continue;
+    }
+
+    
+    if(strcmp(argv[i], "-prep_hm")==0){ // prepare for hierarchical model
+      run_option = 4;
+      continue;
+    }
+    
+    if(strcmp(argv[i], "-lambda")==0 ){
+      lambda = atof(argv[++i]);
+      continue;
+    }
+
+    if(strcmp(argv[i], "-n")==0 ){
+      strcpy(gene_name, argv[++i]);
+      continue;
+    }
+    
     
     if(strcmp(argv[i],"-no_corr")==0){
       no_corr = 1;
@@ -131,9 +153,14 @@ int main(int argc, char **argv){
   }
   
   controller con(data_file,grid_file);
+  con.set_outfile(out_file);
   con.set_gene(gene_name);
   con.set_mvlr_option(abf_option,no_corr);
   
+
+  
+  
+ 
 
   
   if(run_option == 4){

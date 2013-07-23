@@ -6,7 +6,7 @@ using namespace std;
 #include <sstream>
 #include <algorithm>
 #include <gsl/gsl_randist.h>
-
+#include <string.h>
 
 
 controller::controller(char *data_file, char *grid_file){
@@ -55,6 +55,18 @@ void controller::load_grid(char *grid_file){
   gfile.close();
 
 }
+
+
+
+void controller::set_outfile(char *outfile){
+  
+  if(strlen(outfile)==0)
+    outfd = stdout;
+  else
+    outfd = fopen(outfile,"w");
+}
+
+
 
 void controller::init(){  
   
@@ -114,12 +126,12 @@ void controller::prep_single_bf(){
 
     for(int j=1;j<=totalc;j++){
       mcfg[i]= get_config(j); 
-      printf("%s_%s  %d  ",snp.name.c_str(), gene.c_str(),j);
+      fprintf(outfd,"%s_%s  %d  ",snp.name.c_str(), gene.c_str(),j);
       
       for(int k=0;k<phi2_vec.size();k++){
-	printf(" %7.4e ", mvlr.compute_log10_ABF(mcfg,phi2_vec[k], omg2_vec[k]));
+	fprintf(outfd, " %7.4e ", mvlr.compute_log10_ABF(mcfg,phi2_vec[k], omg2_vec[k]));
       }
-      printf("\n");
+      fprintf(outfd,"\n");
     }
   }
   
@@ -170,11 +182,11 @@ void controller::scan(){
     // }
    
     
-    printf("%15s   %9.3f          ",pars.geno_map[i].c_str(), mvlr.log10_weighted_sum(abfv,config_wv) );
+    fprintf(outfd,"%15s   %9.3f          ",pars.geno_map[i].c_str(), mvlr.log10_weighted_sum(abfv,config_wv) );
     for(int j=1;j<=totalc;j++){
-      printf("(%d) %7.3f   ",j, abfv[j-1]);
+      fprintf(outfd,"(%d) %7.3f   ",j, abfv[j-1]);
     }
-    printf("\n");
+    fprintf(outfd,"\n");
 
     
     
@@ -233,7 +245,7 @@ void controller::gene_level_analysis(){
   double gene_pi0 = pow(pi_vec[0],p);
   double gene_post_prob = gene_abf*(1-gene_pi0)/(gene_pi0+  gene_abf*(1-gene_pi0));
   
-  printf("%s\t%d\t%7.3f\t%7.4f\t%s\t%7.3f\n",gene.c_str(),p,gene_log10_abf,gene_post_prob,max_snp.c_str(),max_snp_abf);
+  fprintf(outfd,"%s\t%d\t%7.3f\t%7.4f\t%s\t%7.3f\n",gene.c_str(),p,gene_log10_abf,gene_post_prob,max_snp.c_str(),max_snp_abf);
   
 
 }
@@ -812,20 +824,20 @@ void controller::summarize_posterior(){
     
     if(mid=="")
       mid = string("[NULL]");
-    printf("%5d   %7.4e        %7.3f %7.3f     %s\n",i+1, model_vec[i].prob, model_vec[i].post, model_vec[i].lik, mid.c_str());
+    fprintf(outfd, "%5d   %7.4e        %7.3f %7.3f     %s\n",i+1, model_vec[i].prob, model_vec[i].post, model_vec[i].lik, mid.c_str());
 
   }
 
 
-  printf("\n\n");
+  fprintf(outfd,"\n\n");
   
   std::sort(post_snp_vec.begin(),post_snp_vec.end(),sort_snp_dec_by_ip);
   for(int i=0;i<post_snp_vec.size();i++){
-    printf("%5d %10s  %3d  %8.5e          ",i+1,pars.geno_map[post_snp_vec[i].index].c_str(), post_snp_vec[i].max_config, post_snp_vec[i].incl_prob);
+    fprintf(outfd,"%5d %10s  %3d  %8.5e          ",i+1,pars.geno_map[post_snp_vec[i].index].c_str(), post_snp_vec[i].max_config, post_snp_vec[i].incl_prob);
     int index = post_snp_vec[i].index;
     for(int j=0; j<snp_vec[index].abfv.size();j++)
-      printf("(%d) %6.3f   ",j+1, snp_vec[index].abfv[j]);    
-    printf("\n");
+      fprintf(outfd,"(%d) %6.3f   ",j+1, snp_vec[index].abfv[j]);    
+    fprintf(outfd,"\n");
   }
 }
 
