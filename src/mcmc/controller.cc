@@ -201,13 +201,13 @@ void controller::scan(){
 void controller::gene_level_analysis(){
   
   init();
-  int totalc = (1<<s);
+  int totalc = (1<<s) -1;
   
   vector<double> wts_vec;
   vector<double> abf_vec;
   
   vector<double> configwv;
-  for(int i=1;i<=totalc-1;i++){
+  for(int i=1;i<=totalc;i++){
     configwv.push_back(pi_vec[i]/(1-pi_vec[0]));
   }
   
@@ -222,7 +222,7 @@ void controller::gene_level_analysis(){
 
     vector<double> abfv;
     
-    for(int j=1;j<=totalc-1;j++){
+    for(int j=1;j<=totalc;j++){
       mcfg[i]=get_config(j);
       mcfg_map[i] = j;
       double rst = mvlr.compute_log10_ABF(mcfg);
