@@ -222,7 +222,7 @@ void controller::gene_level_analysis(){
 
     vector<double> abfv;
     
-    for(int j=1;j<=totalc;j++){
+    for(int j=1;j<=totalc-1;j++){
       mcfg[i]=get_config(j);
       mcfg_map[i] = j;
       double rst = mvlr.compute_log10_ABF(mcfg);
