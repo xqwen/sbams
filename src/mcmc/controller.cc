@@ -143,6 +143,7 @@ void controller::prep_single_bf(){
 void controller::scan(){
 
   init();
+
   int totalc = (1<<s)-1;
 
   for(int i=0;i<p;i++){
@@ -182,7 +183,7 @@ void controller::scan(){
     // }
    
     
-    fprintf(outfd,"%15s   %9.3f          ",pars.geno_map[i].c_str(), mvlr.log10_weighted_sum(abfv,config_wv) );
+    fprintf(outfd,"%15s %10s   %9.3f          ",gene.c_str(), pars.geno_map[i].c_str(), mvlr.log10_weighted_sum(abfv,config_wv) );
     for(int j=1;j<=totalc;j++){
       fprintf(outfd,"(%d) %7.3f   ",j, abfv[j-1]);
     }
@@ -702,6 +703,9 @@ int controller::propose(){
 void controller::set_prior(double pes, double lambda){
   
   int size = 1<<s;
+  if(size==2){
+    lambda = 1;
+  }
   double pi1 = pes/double(p);
   if(pi1>=1)
     pi1 = 0.5;
