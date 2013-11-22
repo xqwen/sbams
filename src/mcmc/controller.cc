@@ -513,16 +513,20 @@ void controller::init_mcmc(){
   cfg_map[gene_max_snp] = gene_max_config;
   config[gene_max_snp] = get_config(gene_max_config);
 
-
   curr_lik = mvlr.compute_log10_ABF(config);
   curr_pos = curr_lik+compute_log10_prior(cfg_map);
   
-  fprintf(stderr,"%6d   %7.3f \n",0, curr_pos);
-  //fprintf(stdout,"%6d   %7.3f \n",0, curr_pos);
-  string mid("");
-  mtable[mid] = 1;
-  model_vec.push_back(model(mid,0,curr_pos,0,cfg_map));
   
+  //fprintf(stdout,"%6d   %7.3f \n",0, curr_pos);
+  stringstream ss;
+  ss<<"["<<pars.geno_map[gene_max_snp]<<":"<<cfg_map[gene_max_snp]<<"] ";
+  string mid = ss.str();
+
+  mtable[mid] = 0;
+  model_vec.push_back(model(mid,0,curr_pos,curr_lik,cfg_map));
+  fprintf(stderr,"%6d   %7.3f   ",0, curr_pos);
+  fprintf(stderr,"[%d:(%d)]\n",gene_max_snp,cfg_map[gene_max_snp]);
+
 }
 
   

@@ -45,8 +45,8 @@ void MVLR::init(vector<vector<double> > & Y_in, vector<vector<double> > & Xg_in,
     gsl_matrix_set(Xc,j,0,1.0);
   }
 
-  // default value for IW prior on Sigma H = diag(1e-4), m = s-1
-  //m = s-1;
+  // default value for IW prior on Sigma H = diag(1e-4), m = 0 for low dimensional case
+  
   m = 0;
   H = gsl_matrix_calloc(s,s);
   for(int i=0;i<s;i++){
@@ -150,8 +150,10 @@ void MVLR::compute_Sigma(vector<vector<int> >& config){
     gsl_matrix_free(Sigma_inv);
     Sigma_inv = 0;
   }
+  
 
   compute_Sigma_mle(config);
+  
   return;
   
 }
@@ -298,6 +300,8 @@ void MVLR::compute_Sigma_mle(vector<vector<int> >& config){
   gsl_matrix_free(E);
   gsl_vector_free(cpv);
   gsl_matrix_free(t3);
+
+
 
   invert_Sigma();
 
