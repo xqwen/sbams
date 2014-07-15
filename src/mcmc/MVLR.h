@@ -50,7 +50,8 @@ class MVLR {
   double sigma_option;  // 0 to 1, mixture fraction of mle of Sigma under the alternative model, default 0
   int prior_option;  // 1-- meta prior      2-- diagonal prior
   int no_corr;   // ignore the correlation between subgroups is set to 1, default 0
-
+  int no_incpt;  // regression without intercept term
+  
  private:
   
   void compute_common();
@@ -92,6 +93,7 @@ class MVLR {
     sigma_option = 0.0; 
     prior_option=1;
     no_corr = 0;
+    no_incpt = 0;
   }
 
 
@@ -106,6 +108,10 @@ class MVLR {
   }
   void set_prior_option(int option){
     prior_option = option;
+  }
+
+  void set_no_incpt(){
+    no_incpt = 1;
   }
 
   void set_no_corr(){

@@ -12,7 +12,8 @@ class parser {
   
   vector<vector<double> > geno_vec;
   vector<vector<double> > pheno_vec;
-  
+  vector<vector<double> > covar_vec; // controlled covariates
+
   map<int, string> pheno_map;
   map<int, string> geno_map;
   

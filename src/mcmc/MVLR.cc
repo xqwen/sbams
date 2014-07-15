@@ -11,10 +11,11 @@ void MVLR::init(vector<vector<double> > & Y_in, vector<vector<double> > & Xg_in,
   s = Y_in.size();
   n = Y_in[0].size();
   p = Xg_in.size();
-  q = Xc_in.size();
+  q = 1+Xc_in.size();
   
-  // for the intercept 
-  q++;
+  // for the intercept
+  if(no_incpt)
+    q--;
 
   Y  = gsl_matrix_calloc(n,s);
   Xg = gsl_matrix_calloc(n,p);
@@ -33,16 +34,21 @@ void MVLR::init(vector<vector<double> > & Y_in, vector<vector<double> > & Xg_in,
     }
   }
 
-  if(q>1){
-    for(int i=1;i<q;i++){
-      for(int j=0;j<n;j++){
-	gsl_matrix_set(Xc,j,i,Xc_in[i-1][j]);
-      }
+  int shift = 1;
+  if(no_incpt)
+    shift = 0;
+  
+  for(int i=shift;i<q;i++){
+    for(int j=0;j<n;j++){
+      gsl_matrix_set(Xc,j,i,Xc_in[i-shift][j]);
     }
   }
   
-  for(int j=0;j<n;j++){
-    gsl_matrix_set(Xc,j,0,1.0);
+  
+  if(!no_incpt){
+    for(int j=0;j<n;j++){
+      gsl_matrix_set(Xc,j,0,1.0);
+    }
   }
 
   // default value for IW prior on Sigma H = diag(1e-4), m = 0 for low dimensional case
@@ -88,10 +94,12 @@ void MVLR::compute_common(){
   gsl_matrix *XctXc = gsl_matrix_calloc(q,q);
   gsl_blas_dgemm(CblasTrans,CblasNoTrans,1,Xc,Xc,0,XctXc);
   gsl_matrix *XctXc_inv = gsl_matrix_calloc(q,q);
- 
+  
+  
   if(q==1)
     gsl_matrix_set(XctXc_inv,0,0,1.0/gsl_matrix_get(XctXc,0,0));
   else{
+    /*
     gsl_matrix *t = gsl_matrix_calloc(q,q);
     gsl_matrix_memcpy(t,XctXc);
     int ss;
@@ -100,6 +108,41 @@ void MVLR::compute_common(){
     gsl_linalg_LU_invert (t, pp, XctXc_inv);
     gsl_permutation_free(pp);
     gsl_matrix_free(t);
+    */
+
+    // more robust inversion
+    
+    gsl_matrix *U = gsl_matrix_calloc(q,q);
+    gsl_matrix *V = gsl_matrix_calloc(q,q);
+    gsl_vector *S = gsl_vector_calloc(q);
+    gsl_vector *work = gsl_vector_calloc(q);
+
+    gsl_matrix_memcpy(U,XctXc);
+
+    gsl_linalg_SV_decomp(U,V,S,work);
+
+    gsl_matrix *SI = gsl_matrix_calloc(q,q);
+    for(int j=0;j<q;j++){
+      double val = gsl_vector_get(S,j);
+      if(val>1e-8)
+	val = 1.0/val;
+      gsl_matrix_set(SI,j,j,val);
+    }
+    gsl_matrix *t1 = gsl_matrix_calloc(q,q);
+
+    gsl_blas_dgemm(CblasNoTrans,CblasNoTrans,1,U,SI,0,t1);
+    gsl_blas_dgemm(CblasNoTrans,CblasTrans,1,t1,V,0,XctXc_inv);
+
+    gsl_matrix_free(t1);
+    gsl_matrix_free(SI);
+    gsl_matrix_free(U);
+    gsl_matrix_free(V);
+    gsl_vector_free(S);
+    gsl_vector_free(work);
+
+    
+    
+
   }
   
   

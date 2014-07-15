@@ -6,7 +6,11 @@ using namespace std;
 #include <sstream>
 #include <algorithm>
 #include <gsl/gsl_randist.h>
+#include <gsl/gsl_statistics.h>
 #include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 
 
 controller::controller(char *data_file, char *grid_file){
@@ -17,7 +21,7 @@ controller::controller(char *data_file, char *grid_file){
   
   p = pars.geno_vec.size();
   s = pars.pheno_vec.size();
-
+  q = pars.covar_vec.size();
 
 
   // gsl random number generator
@@ -32,6 +36,7 @@ controller::controller(char *data_file, char *grid_file){
   // default option: running MCMC
   option = 1; 
   mvlr_no_corr = 0;
+  update_pi = 0;
 }
 
 
@@ -78,6 +83,11 @@ void controller::init(){
     Xg.push_back(pars.geno_vec[i]);
   }
 
+  for(int i=0;i<q;i++){
+    Xc.push_back(pars.covar_vec[i]);
+  }
+
+
   if(Xg.size() == 0)
     exit(0);
   
@@ -87,6 +97,9 @@ void controller::init(){
   if(mvlr_no_corr)
     mvlr.set_no_corr();
 
+  if(q!=0 && mvlr_no_incpt)
+    mvlr.set_no_incpt();
+  
   
   mvlr.init(pars.pheno_vec,Xg,Xc);
   
@@ -276,6 +289,11 @@ void controller::run_mcmc(int burnin_in, int rep_in){
     vector<vector<int> > config_cp = config;
     vector<int> select_snp_vec_cp = select_snp_vec;
     
+    
+    double log10_pi1_cp = log10_pi1;
+    vector<double> pi_vec_cp = pi_vec;
+    
+
     int p_type = propose();
 
     double prop_lik = mvlr.compute_log10_ABF(config);
@@ -299,26 +317,32 @@ void controller::run_mcmc(int burnin_in, int rep_in){
       config = config_cp;
       cfg_map = cfg_map_cp;
       select_snp_vec = select_snp_vec_cp;
-    }
+      if(update_pi){
+	log10_pi1 = log10_pi1_cp;
+	pi_vec = pi_vec_cp;
+      }
+   }
     
     
-    fprintf(stderr,"%6d   %7.3f   ",counter, curr_pos);
+   fprintf(stderr,"%6d   %7.3f  ",counter, curr_pos);
     //fprintf(stdout,"%6d   %7.3f   ",counter, curr_pos);
+   if(update_pi){
+     fprintf(stderr,"  %7.2f   ", p*pow(10,log10_pi1));
+   }
     
+   for(int i=0;i<p;i++){  
+     if(cfg_map[i]>0)
+       fprintf(stderr,"[%d:(%d)] ",i,cfg_map[i]);
+     //fprintf(stdout,"[%d:(%d)] ",i,cfg_map[i]);
+   }
+   fprintf(stderr,"\n");              
+   //fprintf(stdout,"\n");              
+   
     
-    for(int i=0;i<p;i++){  
-      if(cfg_map[i]>0)
-	fprintf(stderr,"[%d:(%d)] ",i,cfg_map[i]);
-      //fprintf(stdout,"[%d:(%d)] ",i,cfg_map[i]);
-    }
-    fprintf(stderr,"\n");              
-    //fprintf(stdout,"\n");              
-    
-    
-    if(counter>burnin){
-    
-      stringstream ss;
-      for(int i=0;i<p;i++){
+   if(counter>burnin){
+     
+     stringstream ss;
+     for(int i=0;i<p;i++){
 	//config_count[i][cfg_map[i]]++;
 	if(cfg_map[i]!=0)
 	  ss<<"["<<pars.geno_map[i]<<":"<<cfg_map[i]<<"] ";
@@ -401,7 +425,8 @@ double* controller::build_marginal_proposal(map<int,int> &control_map){
     
   }
 
-  if(max_abf <= 1e-8)
+  
+  if(max_abf <= 0.5)
     return 0;
   
   control_map[max_index] = 1;
@@ -531,12 +556,19 @@ void controller::init_mcmc(){
 
   
 
+void controller::set_update_pi(double low, double high){
 
+  update_pi = 1;
+  log10_pi1_lo = log10(low/p);
+  log10_pi1_hi = log10(high/p);
+  
+}
 
 
 
 int controller::propose_snp(){
   
+
   double draw = gsl_rng_uniform(r);
 
   if(draw<0.05 && select_snp_vec.size()>0){
@@ -590,6 +622,13 @@ double controller::compute_log10_q(int index, int curr, int target){
 
 int controller::propose(){
   
+  if(update_pi){
+    double nw = gsl_rng_uniform(r);
+    log10_pi1 = log10_pi1_lo + nw*(log10_pi1_hi - log10_pi1_lo);
+    update_pi1();
+  }
+
+
   
   // use three types of proposals, 
   // 1. change a snp
@@ -704,8 +743,33 @@ int controller::propose(){
 }
   
 
+
+void controller::update_pi1(){
+
+  pi_vec.clear();
+  int size = 1<<s;
+  double pi1 = pow(10,log10_pi1);
+ 
+  for(int i=0;i<size;i++){
+    if(i==0){
+      pi_vec.push_back(1-pi1);
+    }else if(i==size-1){
+      pi_vec.push_back(pi1*lambda_c);
+    }else{
+      pi_vec.push_back(pi1*(1-lambda_c)/double(size-2));
+    }
+  }
+  
+  
+  return;
+ 
+}
+
+
 void controller::set_prior(double pes, double lambda){
   
+  
+
   int size = 1<<s;
   if(size==2){
     lambda = 1;
@@ -723,6 +787,8 @@ void controller::set_prior(double pes, double lambda){
     }
   }
 
+  lambda_c = lambda;
+  log10_pi1 = log10(pi1);
   
   return;
 }
@@ -773,7 +839,12 @@ void controller::set_prior(char *prior_file){
     pvec[i] *= pi1;
 
   pi_vec = pvec;
-    
+  
+  lambda_c = pvec[size-1]/pi1;
+  log10_pi1 = log10(pi1);
+
+
+  
   return;    
   
 }
@@ -806,9 +877,15 @@ void controller::summarize_posterior(){
  
   std::sort(model_vec.begin(), model_vec.end(),sort_model_dec);
   
+  fprintf(outfd, "Posterior models\n");
+
   for(int i=0;i<model_vec.size();i++){
     string mid = model_vec[i].id;
     model_vec[i].prob = double(mtable[mid])/double(sample_size);
+    
+    if(model_vec[i].prob<1e-8)
+      continue;
+    
     vector<double> pv = get_rb_incl_prob(model_vec[i].msum);
     
     int counter = 0;
@@ -822,10 +899,12 @@ void controller::summarize_posterior(){
 	  SNP psnp(pars.geno_map[j],j);
 	  psnp.max_config = model_vec[i].msum[j];
 	  psnp.incl_prob = 0;
+	  psnp.incl_prob_rb = 0;
 	  post_snp_vec.push_back(psnp);
 	}
 	
-	post_snp_vec[snp_map[id]].incl_prob += model_vec[i].prob*pv[counter];
+	post_snp_vec[snp_map[id]].incl_prob_rb += model_vec[i].prob*pv[counter];
+	post_snp_vec[snp_map[id]].incl_prob += model_vec[i].prob;
 	counter++;
       }
     }
@@ -837,17 +916,124 @@ void controller::summarize_posterior(){
   }
 
 
-  fprintf(outfd,"\n\n");
+  fprintf(outfd,"\nPosterior inclusion probability\n");
   
   std::sort(post_snp_vec.begin(),post_snp_vec.end(),sort_snp_dec_by_ip);
   for(int i=0;i<post_snp_vec.size();i++){
-    fprintf(outfd,"%5d %10s  %3d  %8.5e          ",i+1,pars.geno_map[post_snp_vec[i].index].c_str(), post_snp_vec[i].max_config, post_snp_vec[i].incl_prob);
+    fprintf(outfd,"%5d %10s  %3d    %8.5e %8.5e             ",i+1,pars.geno_map[post_snp_vec[i].index].c_str(), post_snp_vec[i].max_config, post_snp_vec[i].incl_prob, post_snp_vec[i].incl_prob_rb);
     int index = post_snp_vec[i].index;
     for(int j=0; j<snp_vec[index].abfv.size();j++)
       fprintf(outfd,"(%d) %6.3f   ",j+1, snp_vec[index].abfv[j]);    
     fprintf(outfd,"\n");
   }
+  
+  if(post_r2)
+    compute_posterior_r2();
+
+
 }
+
+
+void controller::compute_posterior_r2(){
+
+  for(int i=0;i<s;i++){
+    vector<double> rv;
+    for(int j=0;j<p;j++){
+      rv.push_back(0);
+    }
+    post_r2v.push_back(rv);
+  }
+
+  for(int i=0;i<model_vec.size();i++){
+    tally_post_r2(model_vec[i].msum,model_vec[i].prob);
+  }
+
+  fprintf(outfd,"\nPosterior r^2\n");
+
+  for(int i=0;i<p;i++){
+    fprintf(outfd, "%20s   ",pars.geno_map[i].c_str());
+    for(int j=0;j<s;j++){
+      fprintf(outfd, "%7.3f  ",post_r2v[j][i]);
+    }
+    fprintf(outfd, "\n");
+  }
+}
+
+
+
+
+void controller::tally_post_r2(map<int,int> & mcfg, double prob){
+  vector<vector<double> > rcd;
+  for(int i=0;i<s;i++){
+    vector<double> rv;
+    for(int j=0;j<p;j++){
+      rv.push_back(0);
+    }
+    rcd.push_back(rv);
+  }
+    
+  for(int i=0;i<p;i++){
+    if(mcfg[i]!=0){
+      for(int k=0;k<p;k++){
+	double r2 = compute_r2(k,i);
+	vector<int> vec = get_config(mcfg[i]);
+	for(int j=0;j<s;j++){
+	  if(vec[j]!=0){
+	
+	    if(r2>rcd[j][k])
+	      rcd[j][k] = r2;
+	  }
+	}
+      }
+
+    }
+  }
+  
+  for(int i=0;i<s;i++){
+    for(int j=0;j<p;j++){
+      post_r2v[i][j] += prob*rcd[i][j];
+    }
+  }
+}
+
+  
+
+double controller::compute_r2(int i1, int i2){
+
+  if(i1==i2)
+    return 1.0;
+
+  int a = i1;
+  int b = i2;
+  if(a>b){
+    a = i2;
+    b = i1;
+  }
+    
+  pair<int, int> index = make_pair(a,b);
+  
+  int n = pars.geno_vec[a].size();
+  
+  if(r2_table.find(index) == r2_table.end()){
+    double *av = new double[n];
+    double *bv = new double[n];
+    
+    for(int i=0;i<n;i++){
+      av[i] = pars.geno_vec[a][i];
+      bv[i] = pars.geno_vec[b][i];
+      double cor = gsl_stats_correlation(av, 1, bv, 1, n);
+      r2_table[index] = (cor*cor);
+    }
+    delete[] av;
+    delete[] bv;
+  }
+
+
+  return r2_table[index];
+
+}
+    
+
 
 
 

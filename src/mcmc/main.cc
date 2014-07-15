@@ -30,7 +30,9 @@ int main(int argc, char **argv){
 
 
   int no_corr = 0;
- 
+  int no_incpt = 0;
+
+  int post_r2 = 0;
   
   double pes = 1.0;
   double lambda = 0.5;
@@ -145,6 +147,20 @@ int main(int argc, char **argv){
       continue;
     }
 
+    if(strcmp(argv[i],"-no_incpt")==0){
+      no_incpt = 1;
+      continue;
+    }
+    
+
+
+    if(strcmp(argv[i],"-post_r2")==0){
+      post_r2 = 1;
+      continue;
+    }
+
+    
+
 
     
     fprintf(stderr, "Error: unknown option \"%s\"\n",argv[i]);
@@ -155,9 +171,9 @@ int main(int argc, char **argv){
   controller con(data_file,grid_file);
   con.set_outfile(out_file);
   con.set_gene(gene_name);
-  con.set_mvlr_option(abf_option,no_corr);
-  
-  
+  con.set_mvlr_option(abf_option,no_corr,no_incpt);
+  con.set_post_r2(post_r2);
+  //con.set_update_pi(0.5, 12);
   
   
  

@@ -50,6 +50,11 @@ void parser::process_line(string line){
     geno_vec.push_back(vecv);
     geno_map[geno_vec.size()-1] = string(name);
   }
+
+  if(strcmp(header, "controlled") == 0){
+    covar_vec.push_back(vecv);
+  }
+  
   
   delete[] content;
 

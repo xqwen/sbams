@@ -15,6 +15,7 @@ class SNP {
   int index;
   double max_abf;
   double incl_prob;
+  double incl_prob_rb;
   int max_config;
   
   vector<double> abfv;
@@ -72,6 +73,7 @@ class controller {
   MVLR mvlr;
 
   int p;
+  int q; // number of controlled covariates
   int s;
 
   vector<vector<int> > config;
@@ -101,7 +103,7 @@ class controller {
   double mvlr_sigma_option;
   int mvlr_no_corr;
   int mvlr_prior_option;
-  
+  int mvlr_no_incpt;
 
   const gsl_rng_type * T;
   gsl_rng * r;
@@ -115,7 +117,20 @@ class controller {
   vector<model> model_vec;
   vector<SNP> snp_vec;
   
-  
+  // r2 table
+  vector<vector<double> > post_r2v;
+  map<pair<int, int>, double> r2_table;
+
+  int post_r2; // option to output posterior r2 
+
+
+  bool update_pi;
+
+  double log10_pi1;
+  double lambda_c;
+
+  double log10_pi1_lo;
+  double log10_pi1_hi;
 
  public:
   
@@ -124,7 +139,9 @@ class controller {
   void set_prior(char *prior_file);
   void set_prior(double pes=1, double lambda=0.5);
 
-
+  void set_post_r2(int option){
+    post_r2 = option;
+  }
   
   void run_mcmc(int burnin_in, int rep_in);
   void prep_single_bf();
@@ -138,12 +155,14 @@ class controller {
   
   void init_mcmc();
   
+  void set_update_pi(double low, double high);
 
   void set_outfile(char *filename);
    
-  void set_mvlr_option(double sigma_option, int no_corr){
+  void set_mvlr_option(double sigma_option, int no_corr, int no_incpt){
     mvlr_sigma_option= sigma_option;
     mvlr_no_corr = no_corr; 
+    mvlr_no_incpt = no_incpt;
   }
 
 
@@ -159,6 +178,10 @@ class controller {
   int propose_config(int index);
   //int propose_removal(double *rp, int size);
   
+
+  void update_pi1();
+
+
   double* build_marginal_proposal(map<int,int> &control_map);
   
   double compute_log10_prior(map<int,int>& mcfg_map);
@@ -166,6 +189,12 @@ class controller {
   void init();
   vector<int> get_config(int c);
   double *get_weights(vector<double>& vec);
+
+
+  double compute_r2(int i1, int i2);
+  void tally_post_r2(map<int,int> &mcfg, double prob);
+  void compute_posterior_r2();
+
 
 
   double get_conditional_prob(int index, vector<vector<int> >& mconfig, map<int,int>& mcfg_map);  
